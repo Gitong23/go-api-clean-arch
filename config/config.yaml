@@ -6,7 +6,7 @@ server:
   timeout: 30 # Seconds
  
 oauth2:
-  playerRedirectUrl: "http://localhost:8080/v1/oauth2/google/player/login/callback"
+  playerRedirectUrl: "http://localhost:8080/v1/oauth2/google/player/login/callback/naja"
   adminRedirectUrl: "http://localhost:8080/v1/oauth2/google/admin/login/callback"
   clientId: "xxxxx.apps.googleusercontent.com"
   clientSecret: "xxxxx"
