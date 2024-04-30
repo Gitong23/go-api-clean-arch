@@ -52,5 +52,5 @@ func (s *echoServer) httpListening() {
 }
 
 func (s *echoServer) healthCheck(c echo.Context) error {
-	return c.String(http.StatusOK, "OK")
+	return c.String(http.StatusOK, "OK Krub")
 }
