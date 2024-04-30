@@ -4,41 +4,49 @@ import (
 	"github.com/Gitong23/go-api-clean-arch/config"
 	"github.com/Gitong23/go-api-clean-arch/databases"
 	"github.com/Gitong23/go-api-clean-arch/entities"
+	"gorm.io/gorm"
 )
 
 func main() {
 	conf := config.ConfigGetting()
 	// fmt.Println(conf.Database.HostUrl)
 	db := databases.NewPostgresDatabase(conf.Database)
+	tx := db.ConnectionGetting().Begin()
 
-	playerMigration(db)
-	adminMigration(db)
-	itemMigration(db)
-	playerCoinMigration(db)
-	inventoryMigration(db)
-	purchaseHistoryMigration(db)
+	playerMigration(tx)
+	adminMigration(tx)
+	itemMigration(tx)
+	playerCoinMigration(tx)
+	inventoryMigration(tx)
+	purchaseHistoryMigration(tx)
+
+	tx.Commit()
+	if tx.Error != nil {
+		tx.Rollback()
+		panic(tx.Error)
+	}
 }
 
-func playerMigration(db databases.Database) {
-	db.ConnectionGetting().Migrator().CreateTable(&entities.Player{})
+func playerMigration(tx *gorm.DB) {
+	tx.Migrator().CreateTable(&entities.Player{})
 }
 
-func adminMigration(db databases.Database) {
-	db.ConnectionGetting().Migrator().CreateTable(&entities.Admin{})
+func adminMigration(tx *gorm.DB) {
+	tx.Migrator().CreateTable(&entities.Admin{})
 }
 
-func itemMigration(db databases.Database) {
-	db.ConnectionGetting().Migrator().CreateTable(&entities.Item{})
+func itemMigration(tx *gorm.DB) {
+	tx.Migrator().CreateTable(&entities.Item{})
 }
 
-func playerCoinMigration(db databases.Database) {
-	db.ConnectionGetting().Migrator().CreateTable(&entities.PlayerCoin{})
+func playerCoinMigration(tx *gorm.DB) {
+	tx.Migrator().CreateTable(&entities.PlayerCoin{})
 }
 
-func inventoryMigration(db databases.Database) {
-	db.ConnectionGetting().Migrator().CreateTable(&entities.Inventory{})
+func inventoryMigration(tx *gorm.DB) {
+	tx.Migrator().CreateTable(&entities.Inventory{})
 }
 
-func purchaseHistoryMigration(db databases.Database) {
-	db.ConnectionGetting().Migrator().CreateTable(&entities.PurchaseHistory{})
+func purchaseHistoryMigration(tx *gorm.DB) {
+	tx.Migrator().CreateTable(&entities.PurchaseHistory{})
 }
