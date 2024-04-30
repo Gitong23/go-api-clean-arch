@@ -1,6 +1,11 @@
 package entities
 
-import "time"
+import (
+	"time"
+
+	"github.com/Gitong23/go-api-clean-arch/pkg/itemShop/model"
+	_itemshopModel "github.com/Gitong23/go-api-clean-arch/pkg/itemShop/model"
+)
 
 type (
 	Item struct {
@@ -15,3 +20,13 @@ type (
 		UpdatedAt   time.Time `gorm:"not null;autoUpdateTime;"`
 	}
 )
+
+func (i *Item) ToItemModel() *_itemshopModel.Item {
+	return &model.Item{
+		ID:          i.ID,
+		Name:        i.Name,
+		Description: i.Description,
+		Picture:     i.Picture,
+		Price:       i.Price,
+	}
+}
