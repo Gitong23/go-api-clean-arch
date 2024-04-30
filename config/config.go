@@ -11,13 +11,14 @@ import (
 
 type (
 	Database struct {
-		Host     string `mapstructure:"host" validate:"required"`
-		Port     int    `mapstructure:"port" validate:"required"`
-		User     string `mapstructure:"user" validate:"required"`
-		Password string `mapstructure:"password" validate:"required"`
-		DBName   string `mapstructure:"dbname" validate:"required"`
-		SSLMode  string `mapstructure:"sslmode" validate:"required"`
-		Schema   string `mapstructure:"schema" validate:"required"`
+		// Host     string `mapstructure:"host" validate:"required"`
+		// Port     int    `mapstructure:"port" validate:"required"`
+		// User     string `mapstructure:"user" validate:"required"`
+		// Password string `mapstructure:"password" validate:"required"`
+		// DBName   string `mapstructure:"dbname" validate:"required"`
+		// SSLMode  string `mapstructure:"sslmode" validate:"required"`
+		// Schema   string `mapstructure:"schema" validate:"required"`
+		HostUrl string `mapstructure:"db_url" validate:"required"`
 	}
 
 	Server struct {
@@ -56,7 +57,7 @@ var (
 	configInstance *Config
 )
 
-func ConfigGettingStarted() *Config {
+func ConfigGetting() *Config {
 	once.Do(func() {
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
