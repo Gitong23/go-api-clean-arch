@@ -4,6 +4,8 @@ import (
 	"github.com/Gitong23/go-api-clean-arch/entities"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
+
+	_itemShopException "github.com/Gitong23/go-api-clean-arch/pkg/itemShop/execption"
 )
 
 type itemShopRepositoryImpl struct {
@@ -21,7 +23,7 @@ func (r *itemShopRepositoryImpl) Listing() ([]*entities.Item, error) {
 
 	if err := r.db.Find(&itemList).Error; err != nil {
 		r.logger.Errorf("Failed to list items: %v", err.Error())
-		return nil, err
+		return nil, &_itemShopException.ItemListing{}
 	}
 
 	return itemList, nil
