@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"github.com/Gitong23/go-api-clean-arch/entities"
+	_itemManagingException "github.com/Gitong23/go-api-clean-arch/pkg/itemManaging/exception"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -15,4 +17,14 @@ func NewItemManagingRepository(db *gorm.DB, logger echo.Logger) *itemManagingRep
 		db:     db,
 		logger: logger,
 	}
+}
+
+func (r *itemManagingRepositoryImp) Creating(itemEntity *entities.Item) (*entities.Item, error) {
+	item := new(entities.Item)
+	if err := r.db.Create(itemEntity).Scan(item).Error; err != nil {
+		r.logger.Errorf("Error creating item: %v", err.Error())
+		return nil, &_itemManagingException.ItemCreating{}
+	}
+
+	return item, nil
 }
