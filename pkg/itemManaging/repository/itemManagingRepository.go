@@ -4,4 +4,5 @@ import "github.com/Gitong23/go-api-clean-arch/entities"
 
 type ItemManagingRepository interface {
 	Creating(itemEntity *entities.Item) (*entities.Item, error)
+	Editing(itemEntity *entities.Item) (*entities.Item, error)
 }

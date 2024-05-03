@@ -28,3 +28,16 @@ func (r *itemManagingRepositoryImp) Creating(itemEntity *entities.Item) (*entiti
 
 	return item, nil
 }
+
+func (r *itemManagingRepositoryImp) Editing(itemEntity *entities.Item) (*entities.Item, error) {
+
+	// name := itemEntity.Name
+	selectedID := itemEntity.ID
+	item := new(entities.Item)
+	if err := r.db.Model(item).Where("id = ?", selectedID).Updates(itemEntity).Error; err != nil {
+		r.logger.Errorf("Error updating item: %v", err.Error())
+		return nil, &_itemManagingException.ItemEditing{}
+	}
+
+	return item, nil
+}
