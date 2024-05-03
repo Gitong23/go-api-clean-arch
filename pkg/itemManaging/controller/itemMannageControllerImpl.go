@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Gitong23/go-api-clean-arch/pkg/custom"
 	_itemManagingModel "github.com/Gitong23/go-api-clean-arch/pkg/itemManaging/model"
@@ -37,18 +38,31 @@ func (c *ItemManagingControllerImpl) Creating(pctx echo.Context) error {
 }
 
 func (c *ItemManagingControllerImpl) Editing(pctx echo.Context) error {
+	itemID, err := c.getItemID(pctx)
+	if err != nil {
+		return custom.Error(pctx, http.StatusBadRequest, err.Error())
+	}
+
 	itemEditingReq := new(_itemManagingModel.ItemEditingReq)
 
 	customEchoRequest := custom.NewCustomEchoRequest(pctx)
-
 	if err := customEchoRequest.Bind(itemEditingReq); err != nil {
 		return custom.Error(pctx, http.StatusBadRequest, err.Error())
 	}
 
-	item, err := c.itemManagingService.Editting(itemEditingReq)
+	item, err := c.itemManagingService.Editing(itemID, itemEditingReq)
 	if err != nil {
 		return custom.Error(pctx, http.StatusInternalServerError, err.Error())
 	}
 
 	return pctx.JSON(http.StatusOK, item)
+}
+
+func (c *ItemManagingControllerImpl) getItemID(pctx echo.Context) (uint64, error) {
+	itemID := pctx.Param("itemID")
+	itemIDUint64, err := strconv.ParseUint(itemID, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return itemIDUint64, nil
 }

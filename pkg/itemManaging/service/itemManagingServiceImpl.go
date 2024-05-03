@@ -5,16 +5,19 @@ import (
 	_itemManagingModel "github.com/Gitong23/go-api-clean-arch/pkg/itemManaging/model"
 	_itemManagingRepository "github.com/Gitong23/go-api-clean-arch/pkg/itemManaging/repository"
 	_itemShopModel "github.com/Gitong23/go-api-clean-arch/pkg/itemShop/model"
+	_itemShopRepository "github.com/Gitong23/go-api-clean-arch/pkg/itemShop/repository"
 )
 
 type itemManagingServiceImpl struct {
 	itemManagingRepository _itemManagingRepository.ItemManagingRepository
+	itemShopRepository     _itemShopRepository.ItemShopRepository
 }
 
 func NewItemManagingService(
 	itemManagingRepository _itemManagingRepository.ItemManagingRepository,
+	itemShopRepository _itemShopRepository.ItemShopRepository,
 ) ItemManagingService {
-	return &itemManagingServiceImpl{itemManagingRepository}
+	return &itemManagingServiceImpl{itemManagingRepository, itemShopRepository}
 }
 
 func (s *itemManagingServiceImpl) Creating(itemCreatingReq *_itemManagingModel.ItemCreatingReq) (*_itemShopModel.Item, error) {
@@ -34,17 +37,16 @@ func (s *itemManagingServiceImpl) Creating(itemCreatingReq *_itemManagingModel.I
 	return itemEntityResult.ToItemModel(), nil
 }
 
-func (s *itemManagingServiceImpl) Editting(itemEditingReq *_itemManagingModel.ItemEditingReq) (*_itemShopModel.Item, error) {
+func (s *itemManagingServiceImpl) Editing(itemID uint64, itemEditingReq *_itemManagingModel.ItemEditingReq) (*_itemShopModel.Item, error) {
 
-	itemEntity := &entities.Item{
-		ID:          itemEditingReq.ID,
-		Name:        itemEditingReq.Name,
-		Description: itemEditingReq.Description,
-		Picture:     itemEditingReq.Picture,
-		Price:       itemEditingReq.Price,
+	_, err := s.itemManagingRepository.Editing(itemID, itemEditingReq)
+
+	if err != nil {
+		return nil, err
 	}
 
-	itemEntityResult, err := s.itemManagingRepository.Editing(itemEntity)
+	itemEntityResult, err := s.itemShopRepository.FindByID(itemID)
+
 	if err != nil {
 		return nil, err
 	}

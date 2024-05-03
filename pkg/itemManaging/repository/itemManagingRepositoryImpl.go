@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/Gitong23/go-api-clean-arch/entities"
 	_itemManagingException "github.com/Gitong23/go-api-clean-arch/pkg/itemManaging/exception"
+	_itemManagingModel "github.com/Gitong23/go-api-clean-arch/pkg/itemManaging/model"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -29,15 +30,10 @@ func (r *itemManagingRepositoryImp) Creating(itemEntity *entities.Item) (*entiti
 	return item, nil
 }
 
-func (r *itemManagingRepositoryImp) Editing(itemEntity *entities.Item) (*entities.Item, error) {
-
-	// name := itemEntity.Name
-	selectedID := itemEntity.ID
-	item := new(entities.Item)
-	if err := r.db.Model(item).Where("id = ?", selectedID).Updates(itemEntity).Error; err != nil {
-		r.logger.Errorf("Error updating item: %v", err.Error())
-		return nil, &_itemManagingException.ItemEditing{}
+func (r *itemManagingRepositoryImp) Editing(itemID uint64, itemEditingReq *_itemManagingModel.ItemEditingReq) (uint64, error) {
+	if err := r.db.Model(&entities.Item{}).Where("id = ?", itemID).Updates(itemEditingReq).Error; err != nil {
+		r.logger.Errorf("Editing item failed: %s", err.Error())
 	}
 
-	return item, nil
+	return itemID, nil
 }
