@@ -13,10 +13,10 @@ import (
 	"github.com/Gitong23/go-api-clean-arch/config"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"gorm.io/gorm"
 
 	// "github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	"gorm.io/gorm"
 )
 
 type echoServer struct {

@@ -58,6 +58,19 @@ func (c *ItemManagingControllerImpl) Editing(pctx echo.Context) error {
 	return pctx.JSON(http.StatusOK, item)
 }
 
+func (c *ItemManagingControllerImpl) Archiving(pctx echo.Context) error {
+	itemID, err := c.getItemID(pctx)
+	if err != nil {
+		return custom.Error(pctx, http.StatusBadRequest, err.Error())
+	}
+
+	if err := c.itemManagingService.Archiving(itemID); err != nil {
+		return custom.Error(pctx, http.StatusInternalServerError, err.Error())
+	}
+
+	return pctx.NoContent(http.StatusNoContent)
+}
+
 func (c *ItemManagingControllerImpl) getItemID(pctx echo.Context) (uint64, error) {
 	itemID := pctx.Param("itemID")
 	itemIDUint64, err := strconv.ParseUint(itemID, 10, 64)

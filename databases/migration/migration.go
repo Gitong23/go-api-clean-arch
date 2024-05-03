@@ -11,7 +11,7 @@ func main() {
 	conf := config.ConfigGetting()
 	// fmt.Println(conf.Database.HostUrl)
 	db := databases.NewPostgresDatabase(conf.Database)
-	tx := db.ConnectionGetting().Begin()
+	tx := db.Connect().Begin()
 
 	playerMigration(tx)
 	adminMigration(tx)
