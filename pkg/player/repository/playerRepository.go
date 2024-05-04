@@ -1,3 +1,8 @@
 package repository
 
-type PlayerRepository interface{}
+import "github.com/Gitong23/go-api-clean-arch/entities"
+
+type PlayerRepository interface {
+	Creating(playerEntity *entities.Player) error
+	FindByID(playerID string) (*entities.Player, error)
+}

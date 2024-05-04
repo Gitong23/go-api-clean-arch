@@ -6,25 +6,25 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type playerRepositoryImpl struct {
+type adminRepositoryImpl struct {
 	db     databases.Database
 	logger echo.Logger
 }
 
-func NewPlayerRepositoryImpl(
+func NewAdminRepositoryImpl(
 	db databases.Database,
 	logger echo.Logger,
-) PlayerRepository {
-	return &playerRepositoryImpl{
+) adminRepository {
+	return &adminRepositoryImpl{
 		db:     db,
 		logger: logger,
 	}
 }
 
-func (r *playerRepositoryImpl) Creating(playerEntity *entities.Player) error {
+func (r *adminRepositoryImpl) Creating(playerEntity *entities.Player) error {
 	return nil
 }
 
-func (r *playerRepositoryImpl) FindByID(playerID string) (*entities.Player, error) {
+func (r *adminRepositoryImpl) FindByID(playerID string) (*entities.Player, error) {
 	return nil, nil
 }
