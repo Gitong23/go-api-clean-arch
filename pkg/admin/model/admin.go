@@ -1,6 +1,6 @@
 package model
 
-type PlayerCreatingReq struct {
+type AdminCreatingReq struct {
 	ID     string `gorm:"primaryKey;type:varchar(64);"`
 	Email  string `gorm:"type:varchar(128);unique;not null;"`
 	Name   string `gorm:"type:varchar(128);not null;"`
