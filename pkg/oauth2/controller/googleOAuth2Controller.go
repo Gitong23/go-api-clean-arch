@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"encoding/json"
+	"io"
 	"math/rand"
 	"net/http"
 	"sync"
@@ -102,7 +104,7 @@ func (c *googleOAuth2Controller) PlayerLoginCallback(pctx echo.Context) error {
 		return c.callbackValidating(pctx)
 	}, retry.Attempts(3), retry.Delay(1*time.Second)); err != nil {
 		c.logger.Errorf("Failed to validate callback: %s", err.Error())
-		return custom.Error(pctx, http.StatusUnauthorized, err.Error())
+		return custom.Error(pctx, http.StatusUnauthorized, err)
 	}
 	return pctx.JSON(http.StatusOK, &_oauth2Model.LoginResponse{Message: "Login Success"})
 }
@@ -137,6 +139,30 @@ func (c *googleOAuth2Controller) removeCookie(pctx echo.Context, name string) {
 		MaxAge:   -1,
 	}
 	pctx.SetCookie(cookie)
+}
+
+func (c *googleOAuth2Controller) getUserInfo(client *http.Client) (*_oauth2Model.UserInfo, error) {
+	resp, err := client.Get(c.oauth2Conf.UserInfoUrl)
+	if err != nil {
+		c.logger.Errorf("Failed to get user info: %s", err.Error())
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	userInfoInBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.logger.Errorf("Failed to read user info: %s", err.Error())
+		return nil, err
+	}
+
+	userInfo := new(_oauth2Model.UserInfo)
+	if err := json.Unmarshal(userInfoInBytes, &userInfo); err != nil {
+		c.logger.Errorf("Failed to unmarshal user info: %s", err.Error())
+		return nil, err
+	}
+
+	return userInfo, nil
 }
 
 func (c *googleOAuth2Controller) callbackValidating(pctx echo.Context) error {
