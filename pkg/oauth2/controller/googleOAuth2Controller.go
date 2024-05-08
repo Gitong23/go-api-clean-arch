@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Gitong23/go-api-clean-arch/config"
 	_adminModel "github.com/Gitong23/go-api-clean-arch/pkg/admin/model"
 	"github.com/Gitong23/go-api-clean-arch/pkg/custom"
 	_oauth2Exception "github.com/Gitong23/go-api-clean-arch/pkg/oauth2/exception"
@@ -18,6 +17,8 @@ import (
 	_oauth2Service "github.com/Gitong23/go-api-clean-arch/pkg/oauth2/service"
 	_playerModel "github.com/Gitong23/go-api-clean-arch/pkg/player/model"
 	"github.com/avast/retry-go"
+
+	"github.com/Gitong23/go-api-clean-arch/config"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 )
@@ -45,19 +46,18 @@ func NewGoogleOAuth2Controller(
 	oauth2Conf *config.OAuth2,
 	logger echo.Logger,
 ) OAuth2Controller {
-
 	once.Do(func() {
-		setGoogleOAuth2Config(oauth2Conf)
+		setGooleOAuth2Config(oauth2Conf)
 	})
 
 	return &googleOAuth2Controller{
-		oauth2Service,
-		oauth2Conf,
-		logger,
+		oauth2Service: oauth2Service,
+		oauth2Conf:    oauth2Conf,
+		logger:        logger,
 	}
 }
 
-func setGoogleOAuth2Config(oauth2Conf *config.OAuth2) {
+func setGooleOAuth2Config(oauth2Conf *config.OAuth2) {
 	playerGoogleOAuth2 = &oauth2.Config{
 		ClientID:     oauth2Conf.ClientId,
 		ClientSecret: oauth2Conf.ClientSecret,
@@ -85,7 +85,6 @@ func setGoogleOAuth2Config(oauth2Conf *config.OAuth2) {
 	}
 }
 
-// implementing OAuth2Controller interface
 func (c *googleOAuth2Controller) PlayerLogin(pctx echo.Context) error {
 	state := c.randomState()
 
@@ -93,6 +92,19 @@ func (c *googleOAuth2Controller) PlayerLogin(pctx echo.Context) error {
 
 	return pctx.Redirect(http.StatusFound, playerGoogleOAuth2.AuthCodeURL(state))
 }
+
+// func (c *googleOAuth2Controller) Test(pctx echo.Context) error {
+
+// 	//send cookie
+// 	pctx.SetCookie(&http.Cookie{
+// 		Name:     "test",
+// 		Value:    "test",
+// 		Path:     "/",
+// 		HttpOnly: true,
+// 	})
+
+// 	return pctx.String(http.StatusOK, "Test")
+// }
 
 func (c *googleOAuth2Controller) AdminLogin(pctx echo.Context) error {
 	state := c.randomState()
@@ -107,23 +119,24 @@ func (c *googleOAuth2Controller) PlayerLoginCallback(pctx echo.Context) error {
 
 	if err := retry.Do(func() error {
 		return c.callbackValidating(pctx)
-	}, retry.Attempts(3), retry.Delay(1*time.Second)); err != nil {
-		c.logger.Errorf("Failed to validate callback: %s", err.Error())
-		return custom.Error(pctx, http.StatusUnauthorized, err)
+	}, retry.Attempts(3), retry.Delay(3*time.Second)); err != nil {
+		c.logger.Errorf("Error validating callback: %s", err.Error())
+		return custom.Error(pctx, http.StatusBadRequest, err)
 	}
 
 	token, err := playerGoogleOAuth2.Exchange(ctx, pctx.QueryParam("code"))
 	if err != nil {
-		c.logger.Errorf("Failed to exchange token: %s", err.Error())
-		return custom.Error(pctx, http.StatusUnauthorized, &_oauth2Exception.Unauthorized{})
+		c.logger.Errorf("Error exchanging code for token: %s", err.Error())
+		return custom.Error(pctx, http.StatusBadRequest, &_oauth2Exception.Unauthorized{})
 	}
 
 	client := playerGoogleOAuth2.Client(ctx, token)
 
 	userInfo, err := c.getUserInfo(client)
 	if err != nil {
-		c.logger.Errorf("Failed to get user info: %s", err.Error())
-		return custom.Error(pctx, http.StatusUnauthorized, &_oauth2Exception.Unauthorized{})
+		c.logger.Errorf("Error reading user info: %s", err.Error())
+		return custom.Error(pctx, http.StatusBadRequest, &_oauth2Exception.Unauthorized{})
+
 	}
 
 	playerCreatingReq := &_playerModel.PlayerCreatingReq{
@@ -134,76 +147,73 @@ func (c *googleOAuth2Controller) PlayerLoginCallback(pctx echo.Context) error {
 	}
 
 	if err := c.oauth2Service.PlayerAcountCreating(playerCreatingReq); err != nil {
-		c.logger.Errorf("Failed to create player account: %s", err.Error())
 		return custom.Error(pctx, http.StatusInternalServerError, &_oauth2Exception.OAuth2Processing{})
 	}
 
 	c.setSameSiteCookie(pctx, accessTokenCookieName, token.AccessToken)
 	c.setSameSiteCookie(pctx, refreshTokenCookieName, token.RefreshToken)
 
-	return pctx.JSON(http.StatusOK, &_oauth2Model.LoginResponse{Message: "Login Success"})
+	return pctx.JSON(http.StatusOK, &_oauth2Model.LoginResponse{Message: "Login successful"})
 }
 
 func (c *googleOAuth2Controller) AdminLoginCallback(pctx echo.Context) error {
-
 	ctx := context.Background()
 
 	if err := retry.Do(func() error {
 		return c.callbackValidating(pctx)
-	}, retry.Attempts(3), retry.Delay(1*time.Second)); err != nil {
-		c.logger.Errorf("Failed to validate callback: %s", err.Error())
-		return custom.Error(pctx, http.StatusUnauthorized, err)
+	}, retry.Attempts(3), retry.Delay(3*time.Second)); err != nil {
+		c.logger.Errorf("Error validating callback: %s", err.Error())
+		return custom.Error(pctx, http.StatusBadRequest, err)
 	}
 
 	token, err := adminGoogleOAuth2.Exchange(ctx, pctx.QueryParam("code"))
 	if err != nil {
-		c.logger.Errorf("Failed to exchange token: %s", err.Error())
-		return custom.Error(pctx, http.StatusUnauthorized, &_oauth2Exception.Unauthorized{})
+		c.logger.Errorf("Error exchanging code for token: %s", err.Error())
+		return custom.Error(pctx, http.StatusBadRequest, &_oauth2Exception.Unauthorized{})
 	}
 
 	client := adminGoogleOAuth2.Client(ctx, token)
 
 	userInfo, err := c.getUserInfo(client)
 	if err != nil {
-		c.logger.Errorf("Failed to get user info: %s", err.Error())
-		return custom.Error(pctx, http.StatusUnauthorized, &_oauth2Exception.Unauthorized{})
+		c.logger.Errorf("Error reading user info: %s", err.Error())
+		return custom.Error(pctx, http.StatusBadRequest, &_oauth2Exception.Unauthorized{})
+
 	}
 
-	adminCreatingReq := &_adminModel.AdminCreatingReq{
+	createAdminReq := &_adminModel.AdminCreatingReq{
 		ID:     userInfo.ID,
 		Email:  userInfo.Email,
 		Name:   userInfo.Name,
 		Avatar: userInfo.Picture,
 	}
 
-	if err := c.oauth2Service.AdminAccountCreating(adminCreatingReq); err != nil {
-		c.logger.Errorf("Failed to create admin account: %s", err.Error())
+	if err := c.oauth2Service.AdminAccountCreating(createAdminReq); err != nil {
 		return custom.Error(pctx, http.StatusInternalServerError, &_oauth2Exception.OAuth2Processing{})
 	}
 
 	c.setSameSiteCookie(pctx, accessTokenCookieName, token.AccessToken)
 	c.setSameSiteCookie(pctx, refreshTokenCookieName, token.RefreshToken)
 
-	return pctx.JSON(http.StatusOK, &_oauth2Model.LoginResponse{Message: "Login Success"})
+	return pctx.JSON(http.StatusOK, &_oauth2Model.LoginResponse{Message: "Login successful"})
 }
 
 func (c *googleOAuth2Controller) Logout(pctx echo.Context) error {
 	accessToken, err := pctx.Cookie(accessTokenCookieName)
 	if err != nil {
 		c.logger.Errorf("Error reading access token: %s", err.Error())
-		return custom.Error(pctx, http.StatusUnauthorized, &_oauth2Exception.Unauthorized{})
+		return custom.Error(pctx, http.StatusBadRequest, &_oauth2Exception.Logout{})
 	}
 
 	if err := c.revokeToken(accessToken.Value); err != nil {
-		c.logger.Errorf("Failed to revoke token: %s", err.Error())
-		return custom.Error(pctx, http.StatusInternalServerError, &_oauth2Exception.OAuth2Processing{})
+		c.logger.Errorf("Error revoking token: %s", err.Error())
+		return custom.Error(pctx, http.StatusInternalServerError, &_oauth2Exception.Logout{})
 	}
 
-	c.removeCookie(pctx, accessTokenCookieName)
-	c.removeCookie(pctx, refreshTokenCookieName)
-	c.removeCookie(pctx, stateCookieName)
+	c.removeSameSiteCookie(pctx, accessTokenCookieName)
+	c.removeSameSiteCookie(pctx, refreshTokenCookieName)
 
-	return pctx.JSON(http.StatusOK, &_oauth2Model.LogoutResponse{Message: "Logout Successful"})
+	return pctx.JSON(http.StatusOK, &_oauth2Model.LogoutResponse{Message: "Logout successful"})
 }
 
 func (c *googleOAuth2Controller) revokeToken(accessToken string) error {
@@ -211,13 +221,80 @@ func (c *googleOAuth2Controller) revokeToken(accessToken string) error {
 
 	resp, err := http.Post(revokeURL, "application/x-www-form-urlencoded", nil)
 	if err != nil {
-		fmt.Println("Error revoking token: ", err.Error())
+		fmt.Println("Error revoking token:", err)
 		return err
 	}
 
 	defer resp.Body.Close()
 
 	return nil
+}
+
+func (c *googleOAuth2Controller) callbackValidating(pctx echo.Context) error {
+	state := pctx.QueryParam("state")
+
+	stateFromCookie, err := pctx.Cookie(stateCookieName)
+	if err != nil {
+		c.logger.Errorf("Error reading state: %s", err.Error())
+		return &_oauth2Exception.InvalidState{}
+	}
+
+	if state == "" || state != stateFromCookie.Value {
+		c.logger.Errorf("Invalid state: %s != %s", state)
+		return &_oauth2Exception.InvalidState{}
+	}
+
+	c.removeCookie(pctx, stateCookieName)
+
+	return nil
+}
+
+func (c *googleOAuth2Controller) getUserInfo(client *http.Client) (*_oauth2Model.UserInfo, error) {
+	resp, err := client.Get(c.oauth2Conf.UserInfoUrl)
+	if err != nil {
+		c.logger.Errorf("Error getting user info: %s", err.Error())
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	userInfoInBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.logger.Errorf("Error reading user info: %s", err.Error())
+		return nil, err
+	}
+
+	userInfo := new(_oauth2Model.UserInfo)
+	if err := json.Unmarshal(userInfoInBytes, &userInfo); err != nil {
+		c.logger.Errorf("Error unmarshalling user info: %s", err.Error())
+		return nil, err
+	}
+
+	return userInfo, nil
+}
+
+func (c *googleOAuth2Controller) setSameSiteCookie(pctx echo.Context, name, value string) {
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     "/",
+		SameSite: http.SameSiteStrictMode,
+		HttpOnly: true,
+	}
+
+	pctx.SetCookie(cookie)
+}
+
+func (c *googleOAuth2Controller) removeSameSiteCookie(pctx echo.Context, name string) {
+	cookie := &http.Cookie{
+		Name:     name,
+		Path:     "/",
+		MaxAge:   -1,
+		SameSite: http.SameSiteStrictMode,
+		HttpOnly: true,
+	}
+
+	pctx.SetCookie(cookie)
 }
 
 func (c *googleOAuth2Controller) setCookie(pctx echo.Context, name, value string) {
@@ -227,6 +304,7 @@ func (c *googleOAuth2Controller) setCookie(pctx echo.Context, name, value string
 		Path:     "/",
 		HttpOnly: true,
 	}
+
 	pctx.SetCookie(cookie)
 }
 
@@ -234,77 +312,11 @@ func (c *googleOAuth2Controller) removeCookie(pctx echo.Context, name string) {
 	cookie := &http.Cookie{
 		Name:     name,
 		Path:     "/",
-		HttpOnly: true,
 		MaxAge:   -1,
-	}
-	pctx.SetCookie(cookie)
-}
-
-func (c *googleOAuth2Controller) setSameSiteCookie(pctx echo.Context, name, value string) {
-	cookie := &http.Cookie{
-		Name:     name,
-		Value:    value,
-		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		// Secure:   true, //for production
 	}
+
 	pctx.SetCookie(cookie)
-}
-
-func (c *googleOAuth2Controller) removeSameSiteCookie(pctx echo.Context, name string) {
-	cookie := &http.Cookie{
-		Name:     name,
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   -1,
-		SameSite: http.SameSiteNoneMode,
-		// Secure:   true, //for production
-	}
-	pctx.SetCookie(cookie)
-}
-
-func (c *googleOAuth2Controller) getUserInfo(client *http.Client) (*_oauth2Model.UserInfo, error) {
-	resp, err := client.Get(c.oauth2Conf.UserInfoUrl)
-	if err != nil {
-		c.logger.Errorf("Failed to get user info: %s", err.Error())
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	userInfoInBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.logger.Errorf("Failed to read user info: %s", err.Error())
-		return nil, err
-	}
-
-	userInfo := new(_oauth2Model.UserInfo)
-	if err := json.Unmarshal(userInfoInBytes, &userInfo); err != nil {
-		c.logger.Errorf("Failed to unmarshal user info: %s", err.Error())
-		return nil, err
-	}
-
-	return userInfo, nil
-}
-
-func (c *googleOAuth2Controller) callbackValidating(pctx echo.Context) error {
-	state := pctx.QueryParam("state")
-
-	stateFromCookie, err := pctx.Cookie(stateCookieName)
-	if err != nil {
-		c.logger.Errorf("Failed to get state from cookie: %s", err.Error())
-		return &_oauth2Exception.Unauthorized{}
-	}
-
-	if state != stateFromCookie.Value {
-		c.logger.Errorf("Invalid state from query param")
-		return &_oauth2Exception.Unauthorized{}
-	}
-
-	c.removeCookie(pctx, stateCookieName)
-
-	return nil
 }
 
 func (c *googleOAuth2Controller) randomState() string {
@@ -312,6 +324,5 @@ func (c *googleOAuth2Controller) randomState() string {
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
-
 	return string(b)
 }

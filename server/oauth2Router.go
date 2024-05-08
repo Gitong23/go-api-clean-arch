@@ -16,6 +16,7 @@ func (s *echoServer) initOAuth2Router() {
 	oauth2Service := _oauth2Service.NewGoogleOAuth2Service(playerRepository, adminRepository)
 	oauth2Controller := _oauth2Controller.NewGoogleOAuth2Controller(oauth2Service, s.conf.OAuth2, s.app.Logger)
 
+	// router.GET("/test", oauth2Controller.Test)
 	router.GET("/player/login", oauth2Controller.PlayerLogin)
 	router.GET("/admin/login", oauth2Controller.AdminLogin)
 	router.GET("/player/login/callback", oauth2Controller.PlayerLoginCallback)
