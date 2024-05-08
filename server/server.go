@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/Gitong23/go-api-clean-arch/config"
+	"github.com/Gitong23/go-api-clean-arch/databases"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"gorm.io/gorm"
 
 	// "github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -21,7 +21,7 @@ import (
 
 type echoServer struct {
 	app  *echo.Echo
-	db   *gorm.DB
+	db   databases.Database
 	conf *config.Config
 }
 
@@ -30,7 +30,7 @@ var (
 	server *echoServer
 )
 
-func NewEchoServer(conf *config.Config, db *gorm.DB) *echoServer {
+func NewEchoServer(conf *config.Config, db databases.Database) *echoServer {
 	echoApp := echo.New()
 	echoApp.Logger.SetLevel(log.DEBUG)
 
@@ -60,6 +60,7 @@ func (s *echoServer) Start() {
 	s.app.GET("/v1/health", s.healthCheck)
 	s.initItemShopRouter()
 	s.initItemManagingRouter()
+	s.initOAuth2Router()
 
 	quitCh := make(chan os.Signal, 1)
 	signal.Notify(quitCh, syscall.SIGINT, syscall.SIGTERM)
