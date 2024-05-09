@@ -65,9 +65,11 @@ func (s *echoServer) Start() {
 	authorizingMiddleware := s.getAuthorizingMiddleware()
 
 	s.app.GET("/v1/health", s.healthCheck)
+
+	s.initOAuth2Router()
 	s.initItemShopRouter()
 	s.initItemManagingRouter(authorizingMiddleware)
-	s.initOAuth2Router()
+	s.initPlayerCoinRouter(authorizingMiddleware)
 
 	quitCh := make(chan os.Signal, 1)
 	signal.Notify(quitCh, syscall.SIGINT, syscall.SIGTERM)

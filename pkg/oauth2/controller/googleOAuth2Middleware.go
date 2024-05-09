@@ -37,7 +37,7 @@ func (c *googleOAuth2Controller) PlayerAuthorizing(pctx echo.Context, next echo.
 		return custom.Error(pctx, http.StatusUnauthorized, &_oauth2Exception.Unauthorized{})
 	}
 
-	pctx.Set("player", userInfo.ID)
+	pctx.Set("playerID", userInfo.ID)
 
 	return next(pctx)
 }
@@ -68,7 +68,7 @@ func (c *googleOAuth2Controller) AdminAuthorizing(pctx echo.Context, next echo.H
 		return custom.Error(pctx, http.StatusUnauthorized, &_oauth2Exception.Unauthorized{})
 	}
 
-	pctx.Set("amdin", userInfo.ID)
+	pctx.Set("adminID", userInfo.ID)
 
 	return next(pctx)
 }

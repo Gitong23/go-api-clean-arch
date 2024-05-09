@@ -7,6 +7,7 @@ import (
 	"github.com/Gitong23/go-api-clean-arch/pkg/custom"
 	_itemManagingModel "github.com/Gitong23/go-api-clean-arch/pkg/itemManaging/model"
 	_itemMangingService "github.com/Gitong23/go-api-clean-arch/pkg/itemManaging/service"
+	"github.com/Gitong23/go-api-clean-arch/pkg/validation"
 	"github.com/labstack/echo/v4"
 )
 
@@ -21,6 +22,11 @@ func NewItemMannagingControllerImpl(
 }
 
 func (c *ItemManagingControllerImpl) Creating(pctx echo.Context) error {
+	adminID, err := validation.AdminIDGetting(pctx)
+	if err != nil {
+		return custom.Error(pctx, http.StatusBadRequest, err)
+	}
+
 	itemCreatingReq := new(_itemManagingModel.ItemCreatingReq)
 
 	customEchoRequest := custom.NewCustomEchoRequest(pctx)
@@ -28,6 +34,7 @@ func (c *ItemManagingControllerImpl) Creating(pctx echo.Context) error {
 	if err := customEchoRequest.Bind(itemCreatingReq); err != nil {
 		return custom.Error(pctx, http.StatusBadRequest, err)
 	}
+	itemCreatingReq.AdminID = adminID
 
 	item, err := c.itemManagingService.Creating(itemCreatingReq)
 	if err != nil {
