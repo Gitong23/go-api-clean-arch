@@ -7,7 +7,7 @@ import (
 	_itemShopRepository "github.com/Gitong23/go-api-clean-arch/pkg/itemShop/repository"
 )
 
-func (s *echoServer) initItemManagingRouter() {
+func (s *echoServer) initItemManagingRouter(m *authorizingMiddleware) {
 	router := s.app.Group("/v1/item-managing")
 
 	itemManagingRepository := _itemMannagingRepository.NewItemManagingRepository(s.db, s.app.Logger)
@@ -16,7 +16,7 @@ func (s *echoServer) initItemManagingRouter() {
 	itemManagingService := _itemMannagingService.NewItemManagingService(itemManagingRepository, itemShopRepository)
 	itemManagingController := _itemMannagingController.NewItemMannagingControllerImpl(itemManagingService)
 
-	router.POST("", itemManagingController.Creating)
-	router.PATCH("/:itemID", itemManagingController.Editing)
-	router.DELETE("/:itemID", itemManagingController.Archiving)
+	router.POST("", itemManagingController.Creating, m.AdminAuthorizing)
+	router.PATCH("/:itemID", itemManagingController.Editing, m.AdminAuthorizing)
+	router.DELETE("/:itemID", itemManagingController.Archiving, m.AdminAuthorizing)
 }
