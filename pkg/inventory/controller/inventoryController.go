@@ -1,3 +1,7 @@
 package controller
 
-type InventroryController interface{}
+import "github.com/labstack/echo/v4"
+
+type InventroryController interface {
+	Listing(pctx echo.Context) error
+}
