@@ -11,7 +11,7 @@ func (s *echoServer) initItemManagingRouter(m *authorizingMiddleware) {
 	router := s.app.Group("/v1/item-managing")
 
 	itemManagingRepository := _itemMannagingRepository.NewItemManagingRepository(s.db, s.app.Logger)
-	itemShopRepository := _itemShopRepository.NewItemShopRepository(s.db, s.app.Logger)
+	itemShopRepository := _itemShopRepository.NewItemShopRepositoryImpl(s.db, s.app.Logger)
 
 	itemManagingService := _itemMannagingService.NewItemManagingService(itemManagingRepository, itemShopRepository)
 	itemManagingController := _itemMannagingController.NewItemMannagingControllerImpl(itemManagingService)

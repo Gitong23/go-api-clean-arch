@@ -14,7 +14,7 @@ type itemShopRepositoryImpl struct {
 	logger echo.Logger
 }
 
-func NewItemShopRepository(db databases.Database, logger echo.Logger) ItemShopRepository {
+func NewItemShopRepositoryImpl(db databases.Database, logger echo.Logger) ItemShopRepository {
 	return &itemShopRepositoryImpl{db, logger}
 }
 
