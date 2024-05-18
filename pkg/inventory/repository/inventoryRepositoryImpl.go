@@ -5,6 +5,7 @@ import (
 	"github.com/Gitong23/go-api-clean-arch/entities"
 	_inventoryException "github.com/Gitong23/go-api-clean-arch/pkg/inventory/exception"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 type inventoryRepositoryImpl struct {
@@ -19,37 +20,51 @@ func NewInventoryRepositoryImpl(db databases.Database, logger echo.Logger) Inven
 	}
 }
 
-func (r *inventoryRepositoryImpl) Filling(inventoryEntities []*entities.Inventory) ([]*entities.Inventory, error) {
+func (r *inventoryRepositoryImpl) Filling(tx *gorm.DB, playerID string, itemID uint64, qty int) ([]*entities.Inventory, error) {
 
-	inventoryEntitiesResult := make([]*entities.Inventory, 0)
+	conn := r.db.Connect()
+	if tx != nil {
+		conn = tx
+	}
 
-	if err := r.db.Connect().CreateInBatches(
+	inventoryEntities := make([]*entities.Inventory, 0)
+
+	for range qty {
+		inventoryEntities = append(inventoryEntities, &entities.Inventory{
+			PlayerID: playerID,
+			ItemID:   itemID,
+		})
+	}
+
+	if err := conn.Create(
 		inventoryEntities,
-		len(inventoryEntities),
-	).Scan(&inventoryEntitiesResult).Error; err != nil {
+	).Error; err != nil {
 		r.logger.Errorf("error filling inventory: %s", err.Error())
 		return nil, &_inventoryException.InventoryFilling{
-			PlayerID: inventoryEntities[0].PlayerID,
-			ItemID:   inventoryEntities[0].ItemID,
+			PlayerID: playerID,
+			ItemID:   itemID,
 		}
 	}
 
-	return inventoryEntitiesResult, nil
+	return inventoryEntities, nil
 }
 
-func (r *inventoryRepositoryImpl) Removing(playerID string, itemID uint64, limit int) error {
+func (r *inventoryRepositoryImpl) Removing(tx *gorm.DB, playerID string, itemID uint64, limit int) error {
+
+	conn := r.db.Connect()
+	if tx != nil {
+		conn = tx
+	}
 
 	inventoryEntities, err := r.findPlayerItemInventoryByID(playerID, itemID, limit)
 	if err != nil {
 		return err
 	}
 
-	tx := r.db.Connect().Begin()
-
 	for _, inventory := range inventoryEntities {
 		inventory.IsDeleted = true
 
-		if err := tx.Model(
+		if err := conn.Model(
 			&entities.Inventory{},
 		).Where(
 			"id = ?", inventory.ID,
@@ -61,14 +76,6 @@ func (r *inventoryRepositoryImpl) Removing(playerID string, itemID uint64, limit
 			return &_inventoryException.PlayerItemRemoving{
 				ItemID: itemID,
 			}
-		}
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		r.logger.Errorf("error removing player item in inventory: %s", err.Error())
-		return &_inventoryException.PlayerItemRemoving{
-			ItemID: itemID,
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"github.com/Gitong23/go-api-clean-arch/databases"
 	"github.com/Gitong23/go-api-clean-arch/entities"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 
 	_itemShopException "github.com/Gitong23/go-api-clean-arch/pkg/itemShop/execption"
 	_itemShopModel "github.com/Gitong23/go-api-clean-arch/pkg/itemShop/model"
@@ -16,6 +17,19 @@ type itemShopRepositoryImpl struct {
 
 func NewItemShopRepositoryImpl(db databases.Database, logger echo.Logger) ItemShopRepository {
 	return &itemShopRepositoryImpl{db, logger}
+}
+
+func (r *itemShopRepositoryImpl) TransactionBegin() *gorm.DB {
+	tx := r.db.Connect()
+	return tx.Begin()
+}
+
+func (r *itemShopRepositoryImpl) TransactionRollback(tx *gorm.DB) error {
+	return tx.Rollback().Error
+}
+
+func (r *itemShopRepositoryImpl) TransactionCommit(tx *gorm.DB) error {
+	return tx.Commit().Error
 }
 
 func (r *itemShopRepositoryImpl) Listing(itemFilter *_itemShopModel.ItemFilter) ([]*entities.Item, error) {
@@ -88,4 +102,21 @@ func (r *itemShopRepositoryImpl) FindByIDList(itemIDs []uint64) ([]*entities.Ite
 	}
 
 	return items, nil
+}
+
+func (r *itemShopRepositoryImpl) PurchaseHistoryRecording(tx *gorm.DB, purchasingEntity *entities.PurchaseHistory) (*entities.PurchaseHistory, error) {
+
+	conn := r.db.Connect()
+	if tx != nil {
+		conn = tx
+	}
+
+	insertedPurchasing := new(entities.PurchaseHistory)
+
+	if err := conn.Create(purchasingEntity).Scan(insertedPurchasing).Error; err != nil {
+		r.logger.Errorf("Failed to record purchase history: %v", err.Error())
+		return nil, &_itemShopException.HistoryOfPurchaseRecording{}
+	}
+
+	return insertedPurchasing, nil
 }
