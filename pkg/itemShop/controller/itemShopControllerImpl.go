@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Gitong23/go-api-clean-arch/pkg/custom"
@@ -34,6 +35,7 @@ func (c *itemShopControllerImpl) Listing(pctx echo.Context) error {
 	if err != nil {
 		return custom.Error(pctx, http.StatusInternalServerError, err)
 	}
+	fmt.Printf("$$$$$$$$$itemModelList: %s\n", itemModelList.Items[0].Name)
 	return pctx.JSON(http.StatusOK, itemModelList)
 }
 

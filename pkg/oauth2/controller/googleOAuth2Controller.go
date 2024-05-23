@@ -153,7 +153,11 @@ func (c *googleOAuth2Controller) PlayerLoginCallback(pctx echo.Context) error {
 	c.setSameSiteCookie(pctx, accessTokenCookieName, token.AccessToken)
 	c.setSameSiteCookie(pctx, refreshTokenCookieName, token.RefreshToken)
 
-	return pctx.JSON(http.StatusOK, &_oauth2Model.LoginResponse{Message: "Login successful"})
+	// return pctx.JSON(http.StatusOK, &_oauth2Model.LoginResponse{Message: "Login successful"})
+
+	//redirect to frontend
+	return pctx.Redirect(http.StatusPermanentRedirect, "http://localhost:3000/login")
+
 }
 
 func (c *googleOAuth2Controller) AdminLoginCallback(pctx echo.Context) error {
@@ -199,6 +203,15 @@ func (c *googleOAuth2Controller) AdminLoginCallback(pctx echo.Context) error {
 }
 
 func (c *googleOAuth2Controller) Logout(pctx echo.Context) error {
+
+	//show all cookies
+	cookies := pctx.Cookies()
+	for _, cookie := range cookies {
+		fmt.Println(cookie.Value)
+	}
+
+	fmt.Println("==============================================")
+
 	accessToken, err := pctx.Cookie(accessTokenCookieName)
 	if err != nil {
 		c.logger.Errorf("Error reading access token: %s", err.Error())
